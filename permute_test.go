@@ -9,7 +9,7 @@ import (
 func TestPermute(t *testing.T) {
 	for n := 1; n <= 1024; n++ {
 		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
-			p := NewPermutationN([]byte("foo"), big.NewInt(int64(n)))
+			p := NewN([]byte("foo"), big.NewInt(int64(n)))
 			seen := make(map[int]int)
 			for i := 0; i < n; i++ {
 				out := p.PermuteInt(i)
@@ -30,7 +30,7 @@ func TestPermuteLength(t *testing.T) {
 		t.Run(fmt.Sprintf("length %d", length), func(t *testing.T) {
 			t.Parallel()
 			t.Log("length", length)
-			p := NewPermutationPowerOf2([]byte("foo"), length)
+			p := NewPowerOf2([]byte("foo"), length)
 			seen := make(map[int]int)
 			for i := 0; i < (1 << length); i++ {
 				out := p.PermuteInt(i)
@@ -46,8 +46,8 @@ func TestPermuteLength(t *testing.T) {
 func TestPermuteKey(t *testing.T) {
 	const length = 16
 	t.Log("length", length)
-	p1 := NewPermutationPowerOf2([]byte("foo"), length)
-	p2 := NewPermutationPowerOf2([]byte("bar"), length)
+	p1 := NewPowerOf2([]byte("foo"), length)
+	p2 := NewPowerOf2([]byte("bar"), length)
 	numCollisions := 0
 	for i := 0; i < (1 << length); i++ {
 		if p1.PermuteInt(i) == p2.PermuteInt(i) {
@@ -63,7 +63,7 @@ func TestPermuteKey(t *testing.T) {
 
 func BenchmarkPermutation_PermuteInt(b *testing.B) {
 	b.ReportAllocs()
-	p := NewPermutationPowerOf2([]byte("foobarbaz"), 16)
+	p := NewPowerOf2([]byte("foobarbaz"), 16)
 	for b.Loop() {
 		p.PermuteInt(1234)
 	}

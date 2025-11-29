@@ -7,15 +7,15 @@ import (
 	"math/big"
 )
 
-// PermutationN builds on PermutationPowerOf2 to make a permutation over an arbitrary range.
+// ArbitraryN builds on PowerOf2 to make a permutation over an arbitrary range.
 // The underlying power-of-2 permutation is iterated to find an in-range result resulting
 // in variable runtime.
-type PermutationN struct {
-	p     *PermutationPowerOf2
+type ArbitraryN struct {
+	p     *PowerOf2
 	n, in big.Int
 }
 
-func NewPermutationN(key []byte, n *big.Int) *PermutationN {
+func NewN(key []byte, n *big.Int) *ArbitraryN {
 	var nMinus1 big.Int
 	nMinus1.Sub(n, big.NewInt(1))
 	bitLen := nMinus1.BitLen()
@@ -23,21 +23,21 @@ func NewPermutationN(key []byte, n *big.Int) *PermutationN {
 		// Feistel network requires at least 2 bits.
 		bitLen = 2
 	}
-	p2n := NewPermutationPowerOf2(key, bitLen)
-	p := &PermutationN{
+	p2n := NewPowerOf2(key, bitLen)
+	p := &ArbitraryN{
 		p: p2n,
 	}
 	p.n.Set(n)
 	return p
 }
 
-func (p *PermutationN) PermuteInt(in int) int {
+func (p *ArbitraryN) PermuteInt(in int) int {
 	return int(p.PermuteInPlace(p.in.SetInt64(int64(in))).Int64())
 }
 
 // PermuteInPlace calculates inOut's permutated value and stores it back into inOut.
 // Returns inOut as a convenience.
-func (p *PermutationN) PermuteInPlace(inOut *big.Int) *big.Int {
+func (p *ArbitraryN) PermuteInPlace(inOut *big.Int) *big.Int {
 	if inOut.Cmp(&p.n) >= 0 {
 		panic(fmt.Sprintf("input %v is outside range of permutation [0, %v)",
 			inOut, p.n))
@@ -54,10 +54,10 @@ func (p *PermutationN) PermuteInPlace(inOut *big.Int) *big.Int {
 	}
 }
 
-// PermutationPowerOf2 implements a variable-length block cipher to generate a key-dependent
+// PowerOf2 implements a variable-length block cipher to generate a key-dependent
 // permutation over [0, 2^n - 1].  It uses a Feistel construction with SHAKE128 as the PRF
 // for the round function.
-type PermutationPowerOf2 struct {
+type PowerOf2 struct {
 	key        []byte
 	lengthBits int
 	rounds     int
@@ -69,7 +69,7 @@ type PermutationPowerOf2 struct {
 	h *sha3.SHAKE
 }
 
-func NewPermutationPowerOf2(key []byte, lengthBits int) *PermutationPowerOf2 {
+func NewPowerOf2(key []byte, lengthBits int) *PowerOf2 {
 	if lengthBits <= 1 {
 		panic("lengthBits must be >1")
 	}
@@ -85,7 +85,7 @@ func NewPermutationPowerOf2(key []byte, lengthBits int) *PermutationPowerOf2 {
 	} else {
 		rounds = 12
 	}
-	return &PermutationPowerOf2{
+	return &PowerOf2{
 		key:        key,
 		lengthBits: lengthBits,
 		h:          sha3.NewSHAKE128(),
@@ -93,13 +93,13 @@ func NewPermutationPowerOf2(key []byte, lengthBits int) *PermutationPowerOf2 {
 	}
 }
 
-func (p *PermutationPowerOf2) PermuteInt(in int) int {
+func (p *PowerOf2) PermuteInt(in int) int {
 	return int(p.PermuteInPlace(p.in.SetInt64(int64(in))).Int64())
 }
 
 // PermuteInPlace calculates inOut's permutated value and stores it back into inOut.
 // Returns inOut as a convenience.
-func (p *PermutationPowerOf2) PermuteInPlace(inOut *big.Int) *big.Int {
+func (p *PowerOf2) PermuteInPlace(inOut *big.Int) *big.Int {
 	split := p.lengthBits / 2
 	mask := &p.mask
 	mask.SetInt64(1)
@@ -121,7 +121,7 @@ func (p *PermutationPowerOf2) PermuteInPlace(inOut *big.Int) *big.Int {
 	return out
 }
 
-func (p *PermutationPowerOf2) RoundFunc(round int, b, out *big.Int) *big.Int {
+func (p *PowerOf2) RoundFunc(round int, b, out *big.Int) *big.Int {
 	var inLenBits, outLenBits int
 	if round&1 == 0 {
 		inLenBits = p.lengthBits / 2
